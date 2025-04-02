@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.templating import Jinja2Templates
+from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 from app.database import SessionLocal
 from app.services.users_service import (
@@ -12,6 +14,9 @@ from app.schemas.schemas import UserCreate, UserUpdate, UserResponse
 
 router = APIRouter()
 
+# Configurar Jinja2 para las plantillas
+templates = Jinja2Templates(directory="app/templates")
+
 def get_db():
     db = SessionLocal()
     try:
@@ -19,9 +24,10 @@ def get_db():
     finally:
         db.close()
 
-@router.post("/users", response_model=UserResponse)
-def create_user(user: UserCreate, db: Session = Depends(get_db)):
-    return service_create_user(db, user)
+@router.get("/users", response_class=HTMLResponse)
+def get_users(request: Request, skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
+    users = service_get_users(db, skip=skip, limit=limit)
+    return templates.TemplateResponse("index.html", {"request": request, "users": users})
 
 @router.get("/users", response_model=list[UserResponse])
 def get_users(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):

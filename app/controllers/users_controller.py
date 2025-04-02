@@ -24,30 +24,34 @@ def get_db():
     finally:
         db.close()
 
-@router.get("/users", response_class=HTMLResponse)
+@router.get("/users", response_class=HTMLResponse, description="Muestra una lista de todos los usuarios en formato HTML.")
 def get_users(request: Request, skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
     users = service_get_users(db, skip=skip, limit=limit)
     return templates.TemplateResponse("index.html", {"request": request, "users": users})
 
-@router.get("/users", response_model=list[UserResponse])
-def get_users(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
+@router.get("/users", response_model=list[UserResponse], description="Obtiene una lista de todos los usuarios en formato JSON.")
+def get_users_json(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
     return service_get_users(db, skip=skip, limit=limit)
 
-@router.get("/users/{documento_identidad}", response_model=UserResponse)
+@router.get("/users/{documento_identidad}", response_model=UserResponse, description="Obtiene los detalles de un usuario específico por su documento de identidad.")
 def get_user_by_id(documento_identidad: str, db: Session = Depends(get_db)):
     user = service_get_user_by_id(db, documento_identidad)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return user
 
-@router.put("/users/{documento_identidad}", response_model=UserResponse)
+@router.post("/users", response_model=UserResponse, description="Crea un nuevo usuario en la base de datos.")
+def create_user(user: UserCreate, db: Session = Depends(get_db)):
+    return service_create_user(db, user)
+
+@router.put("/users/{documento_identidad}", response_model=UserResponse, description="Actualiza los datos de un usuario existente.")
 def update_user(documento_identidad: str, user_update: UserUpdate, db: Session = Depends(get_db)):
     user = service_update_user(db, documento_identidad, user_update)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return user
 
-@router.delete("/users/{documento_identidad}", response_model=UserResponse)
+@router.delete("/users/{documento_identidad}", response_model=UserResponse, description="Elimina un usuario de la base de datos.")
 def delete_user(documento_identidad: str, db: Session = Depends(get_db)):
     user = service_delete_user(db, documento_identidad)
     if not user:
